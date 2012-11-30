@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+
+## @file brick
+#  Wrapper executable for all brick commands
+#
+#  @todo Add --help option and man page documentation
+#
+#  @author Derek Dunagan <derek@unifiedarts.com>
+
+import sys, os, subprocess, stat, json, pdb
+
+brickcommand = sys.argv[1]
+systemcommand = (os.path.realpath(__file__ + '/../..')
+              + "/lib/brick-{0}/bin/brick-{0}".format(brickcommand))
+
+if not os.path.exists(systemcommand):
+    print '  `' + brickcommand + '` is a fictitious brick command'
+    #print
+    #print 'Here are the real ones:'
+    #print --help
+    sys.exit()
+
+homedir = os.getenv('HOME')
+if homedir is None:
+    print '  Apparently you have no home directory'
+    print '  You should look into that'
+    sys.exit()
+
+def command_run(executable, args=[], chmod_attempted=False):
+    try:
+        subprocess.call([executable] + args)
+    except OSError, e:
+        if e.errno == 13:
+            if not chmod_attempted:
+                print ('  You have insufficient permissions to run ' +
+                          brickcommand_msgname)
+                if (systemcommand_stat.st_mode & stat.S_IXUSR and
+                  systemcommand_stat.st_mode & stat.S_IXGRP):
+                    print '  ' + brickcommand_msgname + ' is executable'
+                    print ('  So your user and/or group does not have ' +
+                             'permissions')
+                else:
+                    print '  ' + brickcommand_msgname + ' is not executable'
+                    command_chmod_run(executable, args)
+            else:
+                print '  You still have insufficient permissions'
+        print '  ' + brickcommand_msgname + " can't be run"
+        print '  Check with your administrator'
+    finally:
+        sys.exit()
+
+def command_chmod_run(executable, args):
+    print ('  Attempting to ensure ' +
+              brickcommand_msgname + ' is executable...')
+    try:
+        os.chmod(systemcommand, systemcommand_stat.st_mode | stat.S_IXUSR
+                                                           | stat.S_IXGRP)
+        print '  ' + brickcommand_msgname + ' is now executable'
+        command_run(executable, args, True)
+    except Exception, e:
+        print '  Could not make ' + brickcommand_msgname + ' executable'
+    try:
+        print '  Attempting with `sudo`...'
+        subprocess.call('sudo chmod ug+x {}'.format(systemcommand), shell=True)
+        print '  ' + brickcommand_msgname + ' is now executable'
+    except Exception, e:
+        print ('  Still could not make ' +
+                  brickcommand_msgname + ' executable')
+    finally:
+        command_run(executable, args, True)
+
+brickcommand_msgname = '`brick ' + brickcommand + '`'
+systemcommand_stat = os.stat(systemcommand)
+
+if brickcommand == 'init':
+    command_run(systemcommand)
+
+brickconfig_path = homedir + '/.brick/brickconfig.json';
+
+try:
+    brickconfig_file = open(brickconfig_path, 'r')
+    brickconfig_json = brickconfig_file.read()
+    brickconfig_file.close()
+except IOError, e:
+    print '  You have no brickconfig file'
+    print '  Brick has probably not been initialized'
+    print '  You have to run `brick init` before you can do anything'
+    sys.exit()
+
+try:
+    brickconfig = json.loads(brickconfig_json)
+except ValueError, e:
+    print '  Your brickconfig is not valid JSON'
+    print '  Go fix it at ' + brickconfig_path
+    sys.exit()
+
+## @todo This is ghetto. Do it better.
+try:
+    os.putenv('BRICK_APPSDIRECTORY', brickconfig['appsDirectory'])
+except Exception, e:
+    pass
+try:
+    os.putenv('BRICK_APPDIRECTORYNAME', brickconfig['appDirectoryName'])
+except Exception, e:
+    pass
+
+command_run(systemcommand, sys.argv[2:])
