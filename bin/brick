@@ -7,18 +7,25 @@
 #
 #  @author Derek Dunagan <derek@unifiedarts.com>
 
-import sys, os, subprocess, stat, json, pdb
+import sys, os, stat, json
+from subprocess import call
 
-brickcommand = sys.argv[1]
-systemcommand = (os.path.realpath(__file__ + '/../..')
-              + "/lib/brick-{0}/bin/brick-{0}".format(brickcommand))
+def print_help():
+    print '  --help (will be here some day)'
+    sys.exit()
+
+if len(sys.argv) > 1:
+    brickcommand = sys.argv[1]
+    systemcommand = (os.path.realpath(__file__ + '/../..')
+                  + "/lib/brick-{0}/bin/brick-{0}".format(brickcommand))
+else:
+    print_help()
 
 if not os.path.exists(systemcommand):
     print '  `' + brickcommand + '` is a fictitious brick command'
-    #print
-    #print 'Here are the real ones:'
-    #print --help
-    sys.exit()
+    print
+    print '  Here are the real ones:'
+    print_help()
 
 homedir = os.getenv('HOME')
 if homedir is None:
@@ -28,7 +35,7 @@ if homedir is None:
 
 def command_run(executable, args=[], chmod_attempted=False):
     try:
-        subprocess.call([executable] + args)
+        call([executable] + args)
     except OSError, e:
         if e.errno == 13:
             if not chmod_attempted:
@@ -61,7 +68,7 @@ def command_chmod_run(executable, args):
         print '  Could not make ' + brickcommand_msgname + ' executable'
     try:
         print '  Attempting with `sudo`...'
-        subprocess.call('sudo chmod ug+x {}'.format(systemcommand), shell=True)
+        call('sudo chmod ug+x {}'.format(systemcommand), shell=True)
         print '  ' + brickcommand_msgname + ' is now executable'
     except Exception, e:
         print ('  Still could not make ' +
