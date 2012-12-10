@@ -4,3 +4,9 @@
 [submodule "lib/brick-build"]
 	path = lib/brick-build
 	url = git://github.com/unified-arts/brick-build.git
+[submodule "lib/brick-init"]
+	path = lib/brick-init
+	url = git://github.com/unified-arts/brick-init.git
+[submodule "lib/brick-create"]
+	path = lib/brick-create
+	url = git://github.com/unified-arts/brick-create.git
